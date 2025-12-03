@@ -1,5 +1,6 @@
 
-export type UserRole = 'GUEST' | 'CLIENT' | 'ADMIN';
+
+export type UserRole = 'GUEST' | 'CLIENT' | 'ADMIN' | 'MASTER_ADMIN';
 
 export interface User {
   id: string;
@@ -7,6 +8,31 @@ export interface User {
   role: UserRole;
   avatar?: string;
   shopName?: string;
+  branchName?: string;
+  isActive: boolean; // Controls if the user can log in
+}
+
+export interface NegahbarRequest {
+  id: string;
+  name: string;
+  phone: string;
+  password?: string; // Store password to create user upon approval
+  age: number;
+  gender: 'MALE' | 'FEMALE';
+  hasMotor: boolean;
+  hasCar: boolean;
+  warehouseSize: number; // in meters
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  date: string;
+}
+
+export interface Branch {
+  id: string;
+  name: string;
+  managerName: string;
+  phone: string;
+  location: string;
+  isActive: boolean;
 }
 
 export interface Product {
@@ -80,6 +106,7 @@ export type ViewState =
   | 'CREATE_ORDER' // Send to customer
   | 'ADMIN_REQUESTS' // Admin: Approve inbound
   | 'ADMIN_ORDERS' // Admin: Approve outbound
+  | 'MASTER_ADMIN_DASHBOARD' // Master Admin: Manage Branches
   | 'AI_ASSISTANT';
 
 export interface ChatMessage {

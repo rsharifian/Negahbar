@@ -1,0 +1,32 @@
+/* Base Styles */
+body {
+    font-family: 'Vazirmatn', sans-serif;
+    background-color: #f2f2f2;
+    color: #353535;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+    background: #d9d9d9;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #284b63;
+}
+
+/* Animation Utility */
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

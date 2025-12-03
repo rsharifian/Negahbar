@@ -4,10 +4,9 @@ import { Package, Truck, ShieldCheck, Zap, ChevronLeft } from 'lucide-react';
 
 interface LandingPageProps {
   onStart: () => void;
-  onAdminLogin: () => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onAdminLogin }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
   return (
     <div className="min-h-screen bg-[#f2f2f2] font-sans text-[#353535]">
       {/* Navbar */}
@@ -19,9 +18,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onAdminLogin 
           <span className="text-2xl font-bold tracking-wider text-jet-500">Negahbar</span>
         </div>
         <div className="flex gap-4">
-          <button onClick={onAdminLogin} className="text-sm font-medium text-slate-500 hover:text-jet-600 transition-colors">
-            ورود مدیریت
-          </button>
           <button onClick={onStart} className="bg-jet-500 hover:bg-jet-600 text-white px-6 py-2 rounded-xl transition-colors shadow-lg shadow-jet-200">
             شروع همکاری
           </button>

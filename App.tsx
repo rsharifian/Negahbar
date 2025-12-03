@@ -1,16 +1,16 @@
-
 import React, { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { DashboardView } from './components/DashboardView';
-import { StoreView } from './components/StoreView'; // New Import
-import { InventoryView } from './components/InventoryView'; // Keeping import just in case, but unused in main routing if fully moved
+import { StoreView } from './components/StoreView'; 
+import { InventoryView } from './components/InventoryView';
 import { AiAssistantView } from './components/AiAssistantView';
 import { LandingPage } from './components/LandingPage';
 import { AuthView } from './components/AuthView';
 import { SpaceRequestView } from './components/SpaceRequestView';
 import { AdminRequestsView } from './components/AdminRequestsView';
 import { OrderCreationView } from './components/OrderCreationView';
-import { ViewState, Product, MovementLog, UserRole, User, WarehouseRequest, Order } from './types';
+import { MasterAdminView } from './components/MasterAdminView';
+import { ViewState, Product, MovementLog, User, WarehouseRequest, Order, NegahbarRequest, Branch } from './types';
 import { INITIAL_PRODUCTS, INITIAL_LOGS } from './constants';
 import { Menu, Bell } from 'lucide-react';
 
@@ -19,6 +19,22 @@ function App() {
   
   // Auth State
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  // Local User Database (For Demo Purposes)
+  // Initialize with Master Admin
+  const [registeredUsers, setRegisteredUsers] = useState<{phone: string, password: string, data: User}[]>([
+    {
+      phone: '09162897941',
+      password: 'Reza241310',
+      data: {
+        id: 'master_admin',
+        name: 'مدیریت کل (رضا)',
+        role: 'MASTER_ADMIN',
+        avatar: 'https://ui-avatars.com/api/?name=Master+Admin&background=0D8ABC&color=fff',
+        isActive: true
+      }
+    }
+  ]);
   
   // Navigation State
   const [currentView, setCurrentView] = useState<ViewState>('LANDING');
@@ -30,24 +46,110 @@ function App() {
   const [requests, setRequests] = useState<WarehouseRequest[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
 
+  // Master Admin State
+  const [negahbarRequests, setNegahbarRequests] = useState<NegahbarRequest[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([
+    { id: '1', name: 'شعبه مرکزی درچه', managerName: 'سیستم', location: 'اصفهان، درچه', isActive: true, phone: '09130000000' }
+  ]);
+
   // -- HANDLERS --
 
-  const handleLogin = (role: UserRole, name: string) => {
-    const mockUser: User = {
-      id: role === 'ADMIN' ? 'admin_1' : 'user_1',
-      name: name,
-      role: role,
-      avatar: `https://picsum.photos/100/100?random=${role}`,
-      shopName: role === 'CLIENT' ? 'فروشگاه نمونه' : undefined
-    };
-    setCurrentUser(mockUser);
-    setCurrentView('DASHBOARD');
+  // Strict Login Check
+  const handleLoginAttempt = async (phone: string, password: string): Promise<User | null> => {
+    const found = registeredUsers.find(u => u.phone === phone && u.password === password);
+    if (found) {
+        if (!found.data.isActive) {
+           throw new Error('حساب کاربری شما غیرفعال شده است. لطفا با مدیریت تماس بگیرید.');
+        }
+        setCurrentUser(found.data);
+        if (found.data.role === 'MASTER_ADMIN') {
+            setCurrentView('MASTER_ADMIN_DASHBOARD');
+        } else {
+            setCurrentView('DASHBOARD');
+        }
+        return found.data;
+    }
+    return null;
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
     setCurrentView('LANDING');
   };
+
+  // Client Registration (Direct Login)
+  const handleRegisterClient = (name: string, phone: string, password: string, shopName: string) => {
+    const newUser: User = {
+      id: `user_${Date.now()}`,
+      name,
+      role: 'CLIENT',
+      shopName,
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
+      isActive: true
+    };
+
+    setRegisteredUsers(prev => [...prev, { phone, password, data: newUser }]);
+    setCurrentUser(newUser);
+    setCurrentView('DASHBOARD');
+  };
+
+  // Negahbar Registration (Pending Approval)
+  const handleRegisterNegahbar = (data: Omit<NegahbarRequest, 'id' | 'status' | 'date'>) => {
+    const newRequest: NegahbarRequest = {
+      ...data,
+      id: `req_${Date.now()}`,
+      status: 'PENDING',
+      date: new Date().toLocaleDateString('fa-IR')
+    };
+    setNegahbarRequests([newRequest, ...negahbarRequests]);
+  };
+
+  // Master Admin Handlers
+  const handleApproveNegahbar = (req: NegahbarRequest) => {
+    // 1. Create a Branch
+    const newBranch: Branch = {
+        id: `branch_${Date.now()}`,
+        name: `انبار ${req.name}`,
+        managerName: req.name,
+        location: 'آدرس ثبت نشده', // Could be added to form
+        phone: req.phone,
+        isActive: true
+    };
+    setBranches([...branches, newBranch]);
+
+    // 2. Create a User Account for the Negahbar
+    if (req.password) {
+        const newNegahbarUser: User = {
+            id: `negahbar_${Date.now()}`,
+            name: req.name,
+            role: 'ADMIN', // Negahbar role
+            branchName: newBranch.name,
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(req.name)}&background=random`,
+            isActive: true
+        };
+        setRegisteredUsers(prev => [...prev, { phone: req.phone, password: req.password!, data: newNegahbarUser }]);
+    }
+
+    // 3. Remove Request
+    setNegahbarRequests(negahbarRequests.filter(r => r.id !== req.id));
+  };
+
+  const handleRejectNegahbar = (id: string) => {
+     setNegahbarRequests(negahbarRequests.filter(r => r.id !== id));
+  };
+
+  const handleAddBranch = (branchData: Omit<Branch, 'id' | 'isActive'>) => {
+      setBranches([...branches, { ...branchData, id: `b_${Date.now()}`, isActive: true }]);
+  };
+
+  const handleToggleUserStatus = (userId: string) => {
+    setRegisteredUsers(prev => prev.map(u => 
+        u.data.id === userId 
+        ? { ...u, data: { ...u.data, isActive: !u.data.isActive } } 
+        : u
+    ));
+  };
+
 
   const handleSubmitRequest = (reqData: Omit<WarehouseRequest, 'id' | 'date' | 'status'>) => {
     const newRequest: WarehouseRequest = {
@@ -134,25 +236,41 @@ function App() {
   // -- RENDER LOGIC --
 
   if (currentView === 'LANDING') {
-    return <LandingPage onStart={() => setCurrentView('AUTH')} onAdminLogin={() => handleLogin('ADMIN', 'مدیر سیستم')} />;
+    return <LandingPage onStart={() => setCurrentView('AUTH')} />;
   }
 
   if (currentView === 'AUTH') {
-    return <AuthView onLogin={handleLogin} onBack={() => setCurrentView('LANDING')} />;
+    return (
+      <AuthView 
+        onLoginAttempt={handleLoginAttempt} 
+        onRegisterNegahbar={handleRegisterNegahbar} 
+        onRegisterClient={handleRegisterClient}
+        onBack={() => setCurrentView('LANDING')} 
+      />
+    );
   }
 
   const renderContent = () => {
     // Filter data based on role
-    const userProducts = currentUser?.role === 'ADMIN' 
+    // For DEMO: If user is ADMIN or MASTER_ADMIN, show everything. If CLIENT, show their items.
+    const userProducts = (currentUser?.role === 'ADMIN' || currentUser?.role === 'MASTER_ADMIN')
       ? products 
       : products.filter(p => p.ownerId === currentUser?.id || p.ownerId === 'demo_user'); 
 
     switch (currentView) {
       case 'DASHBOARD':
         return <DashboardView products={userProducts} logs={logs} onAddProduct={() => setCurrentView('SPACE_REQUEST')} />;
+      case 'MASTER_ADMIN_DASHBOARD':
+        return <MasterAdminView 
+            negahbarRequests={negahbarRequests} 
+            branches={branches}
+            allUsers={registeredUsers}
+            onApproveNegahbar={handleApproveNegahbar}
+            onRejectNegahbar={handleRejectNegahbar}
+            onAddBranch={handleAddBranch}
+            onToggleUserStatus={handleToggleUserStatus}
+        />;
       case 'STORE':
-        // Store View shows ALL products (Marketplace style) or user products? 
-        // Assuming Marketplace: Show all approved products that are for sale
         return <StoreView products={products} />;
       case 'SPACE_REQUEST':
         return currentUser ? <SpaceRequestView onSubmit={handleSubmitRequest} currentUser={currentUser} /> : null;
@@ -205,7 +323,8 @@ function App() {
               <Menu className="w-6 h-6" />
             </button>
             <h2 className="text-xl font-bold text-slate-800 hidden md:block">
-              {currentView === 'DASHBOARD' && (currentUser?.role === 'ADMIN' ? 'داشبورد مدیریت کل' : 'داشبورد فروشگاه (موجودی من)')}
+              {currentView === 'DASHBOARD' && (currentUser?.role === 'ADMIN' ? 'داشبورد نگهبار (مدیر شعبه)' : 'داشبورد فروشگاه (موجودی من)')}
+              {currentView === 'MASTER_ADMIN_DASHBOARD' && 'مدیریت کل سیستم (نگهبار)'}
               {currentView === 'STORE' && 'فروشگاه محصولات'}
               {currentView === 'SPACE_REQUEST' && 'درخواست ورود کالا به انبار'}
               {currentView === 'CREATE_ORDER' && 'ثبت سفارش ارسال'}
@@ -218,12 +337,12 @@ function App() {
             <div className="hidden md:flex flex-col items-end">
               <span className="text-sm font-bold text-slate-700">{currentUser?.name}</span>
               <span className="text-xs text-slate-400">
-                {currentUser?.role === 'ADMIN' ? 'مدیر سیستم' : currentUser?.shopName}
+                {currentUser?.role === 'MASTER_ADMIN' ? 'مدیریت کل' : (currentUser?.role === 'ADMIN' ? 'نگهبار' : currentUser?.shopName)}
               </span>
             </div>
             <button className="relative p-2 text-slate-400 hover:bg-slate-50 rounded-full transition-colors">
               <Bell className="w-6 h-6" />
-              {requests.filter(r => r.status === 'PENDING').length > 0 && currentUser?.role === 'ADMIN' && (
+              {currentUser?.role === 'MASTER_ADMIN' && negahbarRequests.length > 0 && (
                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
               )}
             </button>

@@ -1,7 +1,8 @@
 
+
 import React from 'react';
 import { ViewState, UserRole } from '../types';
-import { LayoutDashboard, Store, Truck, Bot, LogOut, FolderPlus, ClipboardCheck, ListOrdered, Package } from 'lucide-react';
+import { LayoutDashboard, Store, Truck, Bot, LogOut, FolderPlus, ClipboardCheck, ListOrdered, Package, Shield, Users } from 'lucide-react';
 
 interface SidebarProps {
   currentView: ViewState;
@@ -21,15 +22,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isO
     { id: 'AI_ASSISTANT', label: 'دستیار هوشمند', icon: Bot },
   ];
 
-  const adminNavItems = [
-    { id: 'DASHBOARD', label: 'داشبورد مدیریت', icon: LayoutDashboard },
+  const negahbarNavItems = [
+    { id: 'DASHBOARD', label: 'داشبورد نگهبار', icon: LayoutDashboard },
     { id: 'ADMIN_REQUESTS', label: 'درخواست‌های انبار', icon: ClipboardCheck },
     { id: 'ADMIN_ORDERS', label: 'مدیریت ارسال‌ها', icon: ListOrdered },
     { id: 'STORE', label: 'نمای فروشگاه', icon: Store },
     { id: 'AI_ASSISTANT', label: 'دستیار هوشمند', icon: Bot },
   ];
 
-  const navItems = role === 'ADMIN' ? adminNavItems : clientNavItems;
+  const masterAdminNavItems = [
+    { id: 'MASTER_ADMIN_DASHBOARD', label: 'پنل مدیریت کل', icon: Shield },
+    { id: 'ADMIN_REQUESTS', label: 'مانیتورینگ درخواست‌ها', icon: Users },
+  ];
+
+  let navItems;
+  if (role === 'MASTER_ADMIN') navItems = masterAdminNavItems;
+  else if (role === 'ADMIN') navItems = negahbarNavItems;
+  else navItems = clientNavItems;
 
   return (
     <aside className={`${isOpen ? 'translate-x-0' : 'translate-x-full'} md:translate-x-0 fixed md:static inset-y-0 right-0 z-50 w-64 bg-slate-900 text-white transition-transform duration-300 ease-in-out flex flex-col shadow-xl`}>
@@ -40,7 +49,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isO
         <div>
           <h1 className="text-2xl font-bold tracking-wider">Negahbar</h1>
           <p className="text-xs text-slate-400">
-            {role === 'ADMIN' ? 'پنل مدیریت' : 'پنل فروشندگان'}
+            {role === 'MASTER_ADMIN' ? 'پنل مدیریت کل' : (role === 'ADMIN' ? 'پنل نگهبار (شعبه)' : 'پنل فروشندگان')}
           </p>
         </div>
       </div>
